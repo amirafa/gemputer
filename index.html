@@ -134,7 +134,6 @@
                      :dir="isFarsi(msg.content || msg.textSummary) ? 'rtl' : 'ltr'"
                      :class="isFarsi(msg.content || msg.textSummary) ? 'text-right rtl' : 'text-left ltr'">
                     
-                    <!-- Display image inside user bubble if it was uploaded -->
                     <img v-if="msg.attachedImage" :src="msg.attachedImage" class="max-w-xs max-h-48 rounded-lg object-cover mb-1 border border-[#4e5154]" />
                     <span v-if="msg.textSummary">{{ msg.textSummary }}</span>
                 </div>
@@ -155,13 +154,11 @@
                 <span class="text-xs text-textSub truncate max-w-[150px]">Image ready to analyze</span>
             </div>
 
-            <!-- Dynamic Control Input row -->
+            <!-- Input bar layout -->
             <div class="input-area flex items-center bg-inputBg border border-transparent rounded-[28px] md:rounded-[32px] pl-2 pr-2 py-1 focus-within:border-[#4285f4] focus-within:ring-1 focus-within:ring-[#4285f4] transition-all duration-200">
                 
-                <!-- Hidden Native Input File Node -->
                 <input type="file" ref="imageFileInput" @change="handleImageSelection" accept="image/*" class="hidden" />
                 
-                <!-- File Upload Trigger Button -->
                 <button 
                     @click="$refs.imageFileInput.click()" 
                     :disabled="isLoading"
@@ -239,7 +236,6 @@
                 }
             };
 
-            // Convert local file selector node data to synchronous Base64 string strings
             const handleImageSelection = (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -279,12 +275,11 @@
                 const img = attachedImageBase64.value;
                 if ((!text && !img) || isLoading.value) return;
 
-                // Push message to local view array
                 messages.value.push({ 
                     role: 'user', 
                     content: text || (img ? 'Analyzing attached image...' : ''),
-                    textSummary: text, // Saved tracking field for clean UI render template text blocks
-                    attachedImage: img // Pass base64 back locally to render preview inside the chat list bubble
+                    textSummary: text,
+                    attachedImage: img
                 });
 
                 userInput.value = '';
@@ -292,16 +287,16 @@
                 isLoading.value = true;
                 await scrollToBottom();
 
+                // Setup initial state for assistant node placeholder
                 messages.value.push({ 
                     role: 'assistant', 
-                    content: 'Thinking...', 
+                    content: '', 
                     isThinking: true 
                 });
                 const aiMessageIndex = messages.value.length - 1;
                 await scrollToBottom();
 
                 try {
-                    // Structure thread context cleanly for Puter v2's history handling engine
                     const apiHistoryPayload = [];
                     
                     messages.value.forEach((m) => {
@@ -313,7 +308,6 @@
                                 content: m.content
                             });
                         } else if (m.role === 'user') {
-                            // If user message contains a base64 asset string, turn it into a multimodal structure element
                             if (m.attachedImage) {
                                 const multiModalContent = [];
                                 if (m.textSummary) {
@@ -339,38 +333,42 @@
                         }
                     });
 
-                    let response;
+                    let responseStream;
                     try {
-                        response = await puter.ai.chat(apiHistoryPayload, { model: 'gpt-5.4-nano' });
+                        // Request connection with continuous data delivery enabled
+                        responseStream = await puter.ai.chat(apiHistoryPayload, { model: 'gpt-5.4-nano', stream: true });
                     } catch (modelError) {
-                        response = await puter.ai.chat(apiHistoryPayload);
+                        responseStream = await puter.ai.chat(apiHistoryPayload, { stream: true });
                     }
 
-                    let parsedContentText = '';
-                    if (response && typeof response === 'object') {
-                        if (response.message && response.message.content) {
-                            parsedContentText = response.message.content;
-                        } else if (response.text) {
-                            parsedContentText = response.text;
-                        } else {
-                            parsedContentText = String(response);
+                    // Process incremental string tokens iteratively
+                    for await (const part of responseStream) {
+                        if (part?.text) {
+                            // Erase thinking flag on first chunk reception
+                            if (messages.value[aiMessageIndex].isThinking) {
+                                messages.value[aiMessageIndex].isThinking = false;
+                            }
+                            messages.value[aiMessageIndex].content += part.text;
+                            // Continuous scroll anchoring as tokens append
+                            scrollToBottom();
                         }
-                    } else {
-                        parsedContentText = response || '';
                     }
-
-                    messages.value[aiMessageIndex].content = parsedContentText;
-                    messages.value[aiMessageIndex].isThinking = false;
 
                 } catch (error) {
-                    console.error("Puter Engine Processing Failure:", error);
-                    messages.value.splice(aiMessageIndex, 1);
+                    console.error("Puter Streaming Engine Processing Failure:", error);
+                    // Handle edge cases where stream breaks mid-session
+                    if (messages.value[aiMessageIndex] && messages.value[aiMessageIndex].content === '') {
+                        messages.value.splice(aiMessageIndex, 1);
+                    }
                     messages.value.push({
                         role: 'error',
-                        content: 'Error: Failed to fetch response from GemPuter engine.'
+                        content: 'Error: Connection lost while streaming responses from GemPuter.'
                     });
                 } finally {
                     isLoading.value = false;
+                    if (messages.value[aiMessageIndex]) {
+                        messages.value[aiMessageIndex].isThinking = false;
+                    }
                     await scrollToBottom();
                     nextTick(() => inputField.value?.focus());
                 }
