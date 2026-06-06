@@ -13,7 +13,7 @@
     </script>
     <!-- Vue 3 Global Build CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- Marked.js CDN (Markdown Parser) -->
+    <!-- Marked.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,48 +38,22 @@
         }
     </script>
     <style>
-        .h-dynamic-screen {
-            height: 100vh;
-            height: 100dvh;
-        }
-        @media (min-width: 768px) {
-            .md-h-dynamic-card {
-                height: 85vh;
-                height: 85dvh;
-            }
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #37393b;
-            border-radius: 9999px;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
-        /* Markdown Styling Overrides */
+        .h-dynamic-screen { height: 100vh; height: 100dvh; }
+        @media (min-width: 768px) { .md-h-dynamic-card { height: 85vh; height: 85dvh; } }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #37393b; border-radius: 9999px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
         .prose-markdown p { margin-bottom: 0.75rem; line-height: 1.6; }
         .prose-markdown p:last-child { margin-bottom: 0; }
         .prose-markdown strong { color: #ffffff; font-weight: 700; }
         .prose-markdown em { font-style: italic; color: #cbd5e1; }
-        
         .prose-markdown ul { list-style-type: disc; margin-bottom: 0.75rem; }
         .prose-markdown ol { list-style-type: decimal; margin-bottom: 0.75rem; }
         .prose-markdown li { margin-bottom: 0.25rem; }
-        
         .prose-markdown.ltr-msg ul, .prose-markdown.ltr-msg ol { margin-left: 1.5rem; margin-right: 0; text-align: left; }
         .prose-markdown.rtl-msg ul, .prose-markdown.rtl-msg ol { margin-right: 1.5rem; margin-left: 0; text-align: right; }
-        
         .prose-markdown code { background-color: #282a2c; padding: 0.2rem 0.4rem; border-radius: 0.375rem; font-family: monospace; font-size: 0.875em; color: #f43f5e; }
         .prose-markdown pre { background-color: #282a2c; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; border: 1px solid #3c3d3f; }
         .prose-markdown pre code { background-color: transparent; padding: 0; border: none; color: #e3e3e3; font-size: 0.9em; }
@@ -95,15 +69,8 @@
                 <span class="bg-header-text bg-clip-text text-transparent text-xl md:text-2xl font-semibold tracking-tight">GemPuter</span>
                 <span class="text-[8px] font-black px-2 py-0.5 rounded bg-accent-gradient text-white tracking-widest align-middle uppercase shadow-sm">GPT-5.4 NANO</span>
             </div>
-            
-            <button 
-                @click="startNewChat" 
-                title="Start a fresh chat history context" 
-                class="flex items-center gap-1.5 text-xs font-medium text-[#a8c7fa] hover:text-white px-3 py-1.5 rounded-full hover:bg-[#282a2c] active:scale-95 transition-all duration-150"
-            >
-                <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                </svg>
+            <button @click="startNewChat" title="Start a fresh chat history context" class="flex items-center gap-1.5 text-xs font-medium text-[#a8c7fa] hover:text-white px-3 py-1.5 rounded-full hover:bg-[#282a2c] active:scale-95 transition-all duration-150">
+                <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                 <span>New Chat</span>
             </button>
         </div>
@@ -111,29 +78,19 @@
         <!-- Messages Area -->
         <div ref="chatBox" class="messages custom-scrollbar flex-1 p-4 md:p-6 overflow-y-auto flex flex-col gap-5 md:gap-6">
             <template v-for="(msg, index) in messages" :key="index">
-                <!-- System / AI Message -->
                 <div v-if="msg.role === 'assistant' || msg.role === 'system'" 
                      class="message max-w-[88%] md:max-w-[85%] leading-relaxed text-sm md:text-base px-2 self-start animate-fade-in prose-markdown"
                      :dir="isFarsi(msg.content) ? 'rtl' : 'ltr'"
-                     :class="[
-                        msg.isThinking ? 'text-textSub italic font-normal' : '',
-                        isFarsi(msg.content) ? 'text-right rtl rtl-msg w-full' : 'text-left ltr ltr-msg'
-                     ]"
+                     :class="[msg.isThinking ? 'text-textSub italic font-normal' : '', isFarsi(msg.content) ? 'text-right rtl rtl-msg w-full' : 'text-left ltr ltr-msg']"
                      v-html="renderMarkdown(msg.content)">
                 </div>
-
-                <!-- Error Message Style -->
-                <div v-else-if="msg.role === 'error'"
-                     class="message bg-[#3a2512] text-[#fcb97d] self-center text-xs md:text-sm px-4 py-2 rounded-lg border border-[#5c3818] animate-fade-in">
+                <div v-else-if="msg.role === 'error'" class="message bg-[#3a2512] text-[#fcb97d] self-center text-xs md:text-sm px-4 py-2 rounded-lg border border-[#5c3818] animate-fade-in">
                      {{ msg.content }}
                 </div>
-
-                <!-- User Message -->
                 <div v-else-if="msg.role === 'user'" 
                      class="message max-w-[88%] md:max-w-[85%] flex flex-col gap-2 leading-relaxed text-sm md:text-base animate-fade-in bg-userMsgBg text-textMain align-self-end self-end px-4 py-2.5 md:px-5 md:py-3 rounded-[18px] border border-[#3c3d3f]"
                      :dir="isFarsi(msg.content || msg.textSummary) ? 'rtl' : 'ltr'"
                      :class="isFarsi(msg.content || msg.textSummary) ? 'text-right rtl' : 'text-left ltr'">
-                    
                     <img v-if="msg.attachedImage" :src="msg.attachedImage" class="max-w-xs max-h-48 rounded-lg object-cover mb-1 border border-[#4e5154]" />
                     <span v-if="msg.textSummary">{{ msg.textSummary }}</span>
                 </div>
@@ -143,255 +100,126 @@
         <!-- Input Area Wrapper -->
         <div class="input-area-wrapper px-4 pb-4 md:px-6 md:pb-6 bg-containerBg shrink-0 flex flex-col gap-2">
             
-            <!-- Contextual Image Preview Strip -->
-            <div v-if="attachedImageBase64" class="flex items-center gap-2 bg-inputBg p-2 rounded-xl border border-[#3c3d3f] animate-fade-in w-fit max-w-full">
-                <div class="relative">
-                    <img :src="attachedImageBase64" class="w-12 h-12 rounded-lg object-cover border border-[#4e5154]" />
-                    <button @click="clearSelectedImage" class="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 shadow-md">
-                        <svg viewBox="0 0 24 24" class="w-3 h-3 fill-current"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                    </button>
+            <div class="flex items-center gap-3">
+                <div v-if="attachedImageBase64" class="flex items-center gap-2 bg-inputBg p-2 rounded-xl border border-[#3c3d3f] animate-fade-in w-fit max-w-[50%]">
+                    <div class="relative">
+                        <img :src="attachedImageBase64" class="w-10 h-10 rounded-lg object-cover border border-[#4e5154]" />
+                        <button @click="clearSelectedImage" class="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-0.5 shadow-md"><svg viewBox="0 0 24 24" class="w-3 h-3 fill-current"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+                    </div>
                 </div>
-                <span class="text-xs text-textSub truncate max-w-[150px]">Image ready to analyze</span>
+
+                <label class="flex items-center gap-2 text-xs text-textSub cursor-pointer hover:text-white transition-colors">
+                    <input type="checkbox" v-model="useWebSearch" class="accent-indigo-500">
+                    <span>Web Search</span>
+                </label>
             </div>
 
-            <!-- Input bar layout -->
             <div class="input-area flex items-center bg-inputBg border border-transparent rounded-[28px] md:rounded-[32px] pl-2 pr-2 py-1 focus-within:border-[#4285f4] focus-within:ring-1 focus-within:ring-[#4285f4] transition-all duration-200">
-                
                 <input type="file" ref="imageFileInput" @change="handleImageSelection" accept="image/*" class="hidden" />
-                
-                <button 
-                    @click="$refs.imageFileInput.click()" 
-                    :disabled="isLoading"
-                    title="Upload an image for analysis" 
-                    class="text-[#a8c7fa] p-2.5 md:p-3 rounded-full flex justify-center items-center hover:bg-[#353739] active:scale-95 disabled:text-[#4e5154] disabled:hover:bg-transparent transition-all duration-150 shrink-0"
-                >
-                    <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current">
-                        <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0-2-.9-2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                    </svg>
+                <button @click="$refs.imageFileInput.click()" :disabled="isLoading" title="Upload an image" class="text-[#a8c7fa] p-2.5 md:p-3 rounded-full hover:bg-[#353739] active:scale-95 disabled:text-[#4e5154] transition-all duration-150 shrink-0">
+                    <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0-2-.9-2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
                 </button>
-
-                <input 
-                    type="text" 
-                    v-model="userInput" 
-                    @keypress.enter="sendMessage" 
-                    :disabled="isLoading"
-                    ref="inputField"
-                    placeholder="Ask GemPuter or ask about an image..." 
-                    autocomplete="off" 
-                    :dir="isFarsi(userInput) ? 'rtl' : 'ltr'"
-                    :class="isFarsi(userInput) ? 'text-right rtl' : 'text-left ltr'"
-                    class="flex-1 bg-transparent border-none text-textMain outline-none text-sm md:text-base py-3 px-2 placeholder-textSub"
-                >
+                <input type="text" v-model="userInput" @keypress.enter="sendMessage" :disabled="isLoading" ref="inputField" placeholder="Ask GemPuter..." autocomplete="off" :dir="isFarsi(userInput) ? 'rtl' : 'ltr'" :class="isFarsi(userInput) ? 'text-right rtl' : 'text-left ltr'" class="flex-1 bg-transparent border-none text-textMain outline-none text-sm md:text-base py-3 px-2 placeholder-textSub">
                 
-                <button 
-                    @click="sendMessage" 
-                    :disabled="isLoading || (!userInput.trim() && !attachedImageBase64)" 
-                    title="Send message" 
-                    class="bg-transparent text-[#a8c7fa] p-2.5 md:p-3 rounded-full flex justify-center items-center hover:bg-[#353739] active:scale-95 md:hover:text-white disabled:text-[#4e5154] disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:active:scale-100 transition-all duration-150 shrink-0"
-                >
-                    <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current transform rotate-45" :class="isFarsi(userInput) ? 'scale-x-[-1]' : ''">
-                        <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+                <!-- Loading State / Send Button -->
+                <div class="p-2.5 md:p-3 flex justify-center items-center shrink-0">
+                    <svg v-if="isLoading" class="animate-spin w-5 h-5 text-[#4285f4]" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                     </svg>
-                </button>
+                    <button v-else @click="sendMessage" :disabled="isLoading || (!userInput.trim() && !attachedImageBase64)" title="Send message" class="text-[#a8c7fa] rounded-full hover:bg-[#353739] active:scale-95 transition-all duration-150">
+                        <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current transform rotate-45" :class="isFarsi(userInput) ? 'scale-x-[-1]' : ''"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
 <script>
-    if (typeof marked !== 'undefined') {
-        marked.use({ async: false, breaks: true });
-    }
-
+    if (typeof marked !== 'undefined') { marked.use({ async: false, breaks: true }); }
     const { createApp, ref, nextTick } = Vue;
 
     createApp({
         setup() {
             const userInput = ref('');
             const isLoading = ref(false);
+            const useWebSearch = ref(false);
             const chatBox = ref(null);
             const inputField = ref(null);
             const imageFileInput = ref(null);
             const attachedImageBase64 = ref(null);
             
-            const getInitialGreetingMessage = () => [
-                {
-                    role: 'assistant',
-                    content: 'Hello! I am **GemPuter**, your assistant with continuous context memory and image analysis capabilities. How can I help you today?',
-                    isThinking: false
-                }
-            ];
-
+            const getInitialGreetingMessage = () => [{ role: 'assistant', content: 'Hello! I am **GemPuter**. How can I help you today?', isThinking: false }];
             const messages = ref(getInitialGreetingMessage());
 
-            const isFarsi = (text) => {
-                if (!text || typeof text !== 'string') return false;
-                const farsiPattern = /[\u0600-\u06FF]/;
-                return farsiPattern.test(text);
-            };
-
-            const scrollToBottom = async () => {
-                await nextTick();
-                if (chatBox.value) {
-                    chatBox.value.scrollTop = chatBox.value.scrollHeight;
-                }
-            };
-
-            const handleImageSelection = (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    attachedImageBase64.value = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            };
-
-            const clearSelectedImage = () => {
-                attachedImageBase64.value = null;
-                if (imageFileInput.value) imageFileInput.value.value = '';
-            };
-
-            const startNewChat = () => {
-                messages.value = getInitialGreetingMessage();
-                userInput.value = '';
-                isLoading.value = false;
-                clearSelectedImage();
-                nextTick(() => inputField.value?.focus());
-            };
-
-            const renderMarkdown = (text) => {
-                if (!text || typeof text !== 'string') return '';
-                try {
-                    return marked.parse(text);
-                } catch (e) {
-                    console.error("Markdown rendering error:", e);
-                    return text;
-                }
-            };
+            const isFarsi = (text) => { if (!text || typeof text !== 'string') return false; const farsiPattern = /[\u0600-\u06FF]/; return farsiPattern.test(text); };
+            const scrollToBottom = async () => { await nextTick(); if (chatBox.value) chatBox.value.scrollTop = chatBox.value.scrollHeight; };
+            const handleImageSelection = (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { attachedImageBase64.value = e.target.result; }; reader.readAsDataURL(file); };
+            const clearSelectedImage = () => { attachedImageBase64.value = null; if (imageFileInput.value) imageFileInput.value.value = ''; };
+            const startNewChat = () => { messages.value = getInitialGreetingMessage(); userInput.value = ''; isLoading.value = false; clearSelectedImage(); nextTick(() => inputField.value?.focus()); };
+            const renderMarkdown = (text) => { try { return marked.parse(text); } catch (e) { return text; } };
 
             const sendMessage = async () => {
                 const text = userInput.value.trim();
                 const img = attachedImageBase64.value;
                 if ((!text && !img) || isLoading.value) return;
 
-                messages.value.push({ 
-                    role: 'user', 
-                    content: text || (img ? 'Analyzing attached image...' : ''),
-                    textSummary: text,
-                    attachedImage: img
-                });
-
+                messages.value.push({ role: 'user', content: text || 'Analyzing attached image...', textSummary: text, attachedImage: img });
                 userInput.value = '';
                 clearSelectedImage();
                 isLoading.value = true;
                 await scrollToBottom();
 
-                // Setup initial state for assistant node placeholder
-                messages.value.push({ 
-                    role: 'assistant', 
-                    content: '', 
-                    isThinking: true 
-                });
+                messages.value.push({ role: 'assistant', content: '', isThinking: true });
                 const aiMessageIndex = messages.value.length - 1;
                 await scrollToBottom();
 
                 try {
                     const apiHistoryPayload = [];
-                    
                     messages.value.forEach((m) => {
                         if (m.isThinking || m.role === 'error') return;
-
-                        if (m.role === 'assistant') {
-                            apiHistoryPayload.push({
-                                role: 'assistant',
-                                content: m.content
-                            });
-                        } else if (m.role === 'user') {
+                        if (m.role === 'assistant') apiHistoryPayload.push({ role: 'assistant', content: m.content });
+                        else if (m.role === 'user') {
                             if (m.attachedImage) {
-                                const multiModalContent = [];
-                                if (m.textSummary) {
-                                    multiModalContent.push({ type: 'text', text: m.textSummary });
-                                } else {
-                                    multiModalContent.push({ type: 'text', text: 'What do you see?' });
-                                }
-                                multiModalContent.push({
-                                    type: 'image_url',
-                                    image_url: { url: m.attachedImage }
-                                });
-
-                                apiHistoryPayload.push({
-                                    role: 'user',
-                                    content: multiModalContent
-                                });
+                                apiHistoryPayload.push({ role: 'user', content: [{ type: 'text', text: m.textSummary || 'What do you see?' }, { type: 'image_url', image_url: { url: m.attachedImage } }] });
                             } else {
-                                apiHistoryPayload.push({
-                                    role: 'user',
-                                    content: m.content
-                                });
+                                apiHistoryPayload.push({ role: 'user', content: m.content });
                             }
                         }
                     });
 
-                    let responseStream;
-                    try {
-                        // Request connection with continuous data delivery enabled
-                        responseStream = await puter.ai.chat(apiHistoryPayload, { model: 'gpt-5.4-nano', stream: true });
-                    } catch (modelError) {
-                        responseStream = await puter.ai.chat(apiHistoryPayload, { stream: true });
+                    const chatOptions = { stream: true };
+                    if (useWebSearch.value) {
+                        chatOptions.model = 'openai/gpt-5.2-chat';
+                        chatOptions.tools = [{ type: 'web_search' }];
+                    } else {
+                        chatOptions.model = 'gpt-5.4-nano';
                     }
 
-                    // Process incremental string tokens iteratively
+                    const responseStream = await puter.ai.chat(apiHistoryPayload, chatOptions);
+
                     for await (const part of responseStream) {
                         if (part?.text) {
-                            // Erase thinking flag on first chunk reception
-                            if (messages.value[aiMessageIndex].isThinking) {
-                                messages.value[aiMessageIndex].isThinking = false;
-                            }
+                            if (messages.value[aiMessageIndex].isThinking) messages.value[aiMessageIndex].isThinking = false;
                             messages.value[aiMessageIndex].content += part.text;
-                            // Continuous scroll anchoring as tokens append
                             scrollToBottom();
                         }
                     }
-
                 } catch (error) {
-                    console.error("Puter Streaming Engine Processing Failure:", error);
-                    // Handle edge cases where stream breaks mid-session
-                    if (messages.value[aiMessageIndex] && messages.value[aiMessageIndex].content === '') {
-                        messages.value.splice(aiMessageIndex, 1);
-                    }
-                    messages.value.push({
-                        role: 'error',
-                        content: 'Error: Connection lost while streaming responses from GemPuter.'
-                    });
+                    if (messages.value[aiMessageIndex] && messages.value[aiMessageIndex].content === '') messages.value.splice(aiMessageIndex, 1);
+                    messages.value.push({ role: 'error', content: 'Error: Connection lost or search failed.' });
                 } finally {
                     isLoading.value = false;
-                    if (messages.value[aiMessageIndex]) {
-                        messages.value[aiMessageIndex].isThinking = false;
-                    }
+                    useWebSearch.value = false; // Reset search checkbox after every request
+                    if (messages.value[aiMessageIndex]) messages.value[aiMessageIndex].isThinking = false;
                     await scrollToBottom();
                     nextTick(() => inputField.value?.focus());
                 }
             };
 
-            return {
-                userInput,
-                isLoading,
-                messages,
-                chatBox,
-                inputField,
-                imageFileInput,
-                attachedImageBase64,
-                sendMessage,
-                renderMarkdown,
-                isFarsi,
-                startNewChat,
-                handleImageSelection,
-                clearSelectedImage
-            };
+            return { userInput, isLoading, useWebSearch, messages, chatBox, inputField, imageFileInput, attachedImageBase64, sendMessage, renderMarkdown, isFarsi, startNewChat, handleImageSelection, clearSelectedImage };
         }
     }).mount('#app');
 </script>
-
 </body>
 </html>
