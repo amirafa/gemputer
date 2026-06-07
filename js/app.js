@@ -1,10 +1,9 @@
+import { createApp, ref, nextTick } from Vue;
 import { isFarsi } from './utils/helpers.js';
 import { dispatchChatRequest } from './services/puter-api.js';
 import ChatHeader from './components/header.js';
 import ChatBox from './components/chat-box.js';
 import InputArea from './components/input-area.js';
-
-const { createApp, ref, nextTick } = Vue;
 
 createApp({
     components: {
